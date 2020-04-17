@@ -1,0 +1,13 @@
+{
+    "name": "coolblueweb/recipes",
+    "description": "Custom Recipes for Deployer",
+    "type": "vcs",
+    "authors": [
+        {
+            "name": "chasecbw",
+            "email": "chase@coolblueweb.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {}
+}
