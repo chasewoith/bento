@@ -1,11 +1,11 @@
 {
-    "name": "coolblueweb/recipes",
+    "name": "chasewoith/recipes",
     "description": "Custom Recipes for Deployer",
     "type": "vcs",
     "authors": [
         {
-            "name": "chasecbw",
-            "email": "chase@coolblueweb.com"
+            "name": "chasewoith",
+            "email": "chase.woith@gmail.com"
         }
     ],
     "minimum-stability": "dev",
