@@ -29,22 +29,13 @@ namespace Deployer;
     task('what_project', function () {
 
         $host_names = [
-            'new',
-            'ohm',
-            'ulm',
-            'rsl',
-            'grp',
-            'grpm2',
-            'scg',
-            'tel',
-            'telmone',
-            'pce'
+            'new'
         ];
 
         writeln($host_names);
 
-        // Ask for project 3 letter code
-        $project = strtolower(ask('3 letter project code:','',$host_names));
+        // Ask for project project code
+        $project = strtolower(ask('project code:','',$host_names));
 
         // Set variable for project
         set('project', $project);
@@ -140,7 +131,8 @@ namespace Deployer;
                 writeln('REMEMBER TO IMPORT A DATABASE');
             }
         } else {
-            // TODO: Pull from remote source
+            // TODO: Pull from remote source -- Can be accomplished on application level deployment step.
+            writeln('No previous releases were found. Please remember to import dbs manually as needed');
         }
 
     });
