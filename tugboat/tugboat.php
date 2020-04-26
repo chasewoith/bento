@@ -94,8 +94,7 @@ namespace Deployer;
 
         // If previeous Releases Exist then ask if they'd like to use previous release
         if (has('previous_release')){
-            writeln('{{previous_release}}');
-            $pr_ask = askConfirmation('A previous release already exists. Would you like to use this release?');
+            $pr_ask = askConfirmation('A previous release already exists. Would you like to use {{previous_release}} ?');
 
             // If yes run `docker-compose up` on current/. , unlock dep, and exit -ELSE- continue
             if ($pr_ask AND test('[ -d {{deploy_path}}/current/ ]')) {
@@ -117,11 +116,11 @@ namespace Deployer;
     // Docker-Compose Up - Starts Docker container for project
     desc('Pull a db into a tugboat container');
     task('tug:db', function () {
-        writeln('{{deploy_path}}');
+        writeln('Deploy Path: {{deploy_path}}');
         run('ls -la {{deploy_path}}/current/');
         // Check to see if there are previous releases, If so Ask if they'd like to pull the db from the source
         if (has('previous_release')){
-            writeln('{{previous_release}}');
+            writeln('Previous Release: {{previous_release}}');
 
             // Ask if user would like to pull db from latest release
             if (askConfirmation('Would you like to pull the db from previous release?')) {
@@ -172,9 +171,13 @@ namespace Deployer;
     desc('Create and add shared files');
     task('tug:share', function () {
 
+        // set www-data ownership on #ISSUE - Setting ownership to 33 from outside the container
+        writeln('Setting permissions for {{container_user}} on var/www/html/');
+        run('docker exec {{project}}_web chown -R {{container_user}}:{{container_user}} /var/www/html');
+        writeln('✔ Permissions Set');
         // Check to see if there are previous releases, If so Ask if they'd like to pull the shared directory from the source
         if (has('previous_release')){
-            writeln('{{previous_release}}');
+            writeln('Previous Release: {{previous_release}}');
 
             // Ask user if they would like to pull shared directory from previous release
 
@@ -188,12 +191,7 @@ namespace Deployer;
         } else {
             // New Release - Pull Shared directory into container
             run('if [ -d $(echo {{deploy_path}}/current/shared) ]; then mv {{deploy_path}}/current/shared {{deploy_path}}/current/var/www/html/.; fi');
-        }
-
-        // set www-data ownership on #ISSUE - Setting ownership to 33 from outside the container
-        // run('chown -R www-data:www-data {{deploy_path}}/current/var/www/html/');
-        // run('chmod -R 775 {{deploy_path}}/current/var/www/html/');
-              
+        }              
     });
   
 
