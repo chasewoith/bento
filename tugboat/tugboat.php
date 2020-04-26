@@ -171,10 +171,6 @@ namespace Deployer;
     desc('Create and add shared files');
     task('tug:share', function () {
 
-        // set www-data ownership on #ISSUE - Setting ownership to 33 from outside the container
-        writeln('Setting permissions for {{container_user}} on var/www/html/');
-        run('docker exec {{project}}_web chown -R {{container_user}}:{{container_user}} /var/www/html');
-        writeln('✔ Permissions Set');
         // Check to see if there are previous releases, If so Ask if they'd like to pull the shared directory from the source
         if (has('previous_release')){
             writeln('Previous Release: {{previous_release}}');
@@ -191,7 +187,12 @@ namespace Deployer;
         } else {
             // New Release - Pull Shared directory into container
             run('if [ -d $(echo {{deploy_path}}/current/shared) ]; then mv {{deploy_path}}/current/shared {{deploy_path}}/current/var/www/html/.; fi');
-        }              
+        }         
+
+        // set {{container_user}} ownership on var/www/html/
+        writeln('Setting permissions for {{container_user}} on var/www/html/');
+        run('docker exec {{project}}_web chown -R {{container_user}}:{{container_user}} /var/www/html');
+        writeln('✅ Permissions Set');     
     });
   
 
