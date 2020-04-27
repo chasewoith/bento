@@ -100,7 +100,7 @@ namespace Deployer;
             if ($pr_ask AND test('[ -d {{deploy_path}}/current/ ]')) {
                 //
                 writeln('Great! Running docker-compose up ...');
-                cd('{{deploy_path}}/current/ ]');
+                cd('{{deploy_path}}/current/');
                 run('docker-compose up -d');
                 invoke('deploy:unlock');
                 invoke('success');
