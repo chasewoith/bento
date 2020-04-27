@@ -91,7 +91,7 @@ task('deploy:db', function() {
     
 
     if (askConfirmation('Would you like to update your base urls?')) {
-        run('cd {{release_path}} && mrun config:store:set web/unsecure/base_url https://{{real_hostname}}/');
+        run('cd {{release_path}} && mrun config:store:set web/unsecure/base_url http://{{real_hostname}}/');
         run('cd {{release_path}} && mrun config:store:set web/secure/base_url https://{{real_hostname}}/');
         writeln('Urls updated!');
     }
