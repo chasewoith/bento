@@ -41,7 +41,7 @@ task('setup:magento', function() {
     });
     $host = get('real_hostname');
     run('{{bin/php}} {{release_path}}/bin/magento setup:uninstall');
-    run('{{bin/php}} {{release_path}}/bin/magento setup:install --base-url=https://{{real_hostname}} --db-host={{name}}_db --db-name=dev --db-user=root --db-password={{name}}_mysql_root --backend-frontname=admin_{{name}} --admin-firstname=cool --admin-lastname=blue --admin-email=admin@coolblueweb.com --admin-user=admin --admin-password=Ba99llard99! --language=en_US --currency=USD --timezone=America/Los_Angeles --use-rewrites=1');
+    run('{{bin/php}} {{release_path}}/bin/magento setup:install --base-url=http://{{real_hostname}} --db-host={{name}}_db --db-name=dev --db-user=root --db-password={{name}}_mysql_root --backend-frontname=admin_{{name}} --admin-firstname=cool --admin-lastname=blue --admin-email=admin@coolblueweb.com --admin-user=admin --admin-password=Ba99llard99! --language=en_US --currency=USD --timezone=America/Los_Angeles --use-rewrites=1');
     run('cd {{release_path}} && chmod -R 777 var/');
     run('cd {{release_path}} && git config core.fileMode false');
     run('{{bin/php}} {{release_path}}/bin/magento deploy:mode:set developer');
