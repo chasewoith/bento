@@ -19,6 +19,7 @@ namespace Deployer;
         'cleanup',
         'tug:db',
         'dc_up',
+        'tug:keys',
         'tug:share',
         'success'
     ]);
@@ -28,9 +29,7 @@ namespace Deployer;
     desc('Set which project to run');
     task('what_project', function () {
 
-        $host_names = [
-            'new'
-        ];
+        $host_names = ['new'];
 
         writeln($host_names);
 
@@ -113,11 +112,9 @@ namespace Deployer;
     });
 
     // --------- TUG - Step 12. Tug Db from previous release --------- //
-    // Docker-Compose Up - Starts Docker container for project
     desc('Pull a db into a tugboat container');
     task('tug:db', function () {
         writeln('Deploy Path: {{deploy_path}}');
-        run('ls -la {{deploy_path}}/current/');
         // Check to see if there are previous releases, If so Ask if they'd like to pull the db from the source
         if (has('previous_release')){
             writeln('Previous Release: {{previous_release}}');
@@ -135,7 +132,6 @@ namespace Deployer;
         }
 
     });
-
 
     // --------- TUG - Step 13. Docker Compose UP --------- //
     // Docker-Compose Up - Starts Docker container for project
@@ -165,8 +161,29 @@ namespace Deployer;
         writeln('Setup Complete');
     });
 
+    // --------- TUG - Step 14. Tug Keys from host --------- //
+    desc('Pull keys into a tugboat container');
+    task('tug:keys', function () {
+        set('idFile',ask('Identity Filename: ','{{project}}_rsa'));
+        if (test('[ -e ~/.ssh/{{idFile}} ]')) {
+            writeln("Key Found - Pulling Key");
+            run('docker cp ~/.ssh/{{idFile}} {{project}}_web:/home/dev/.ssh/{{idFile}}');
+            run('docker exec {{project}}_web chown -R dev:dev /home/dev/.ssh/{{idFile}}');
+        } else {
+            if(askConfirmation('Key Not Found - Would you like to Generate a key?')){
+                writeln('Generating a New Key');
+                run('ssh-keygen -N "" -t rsa -b 4096 -f ~/.ssh/{{idFile}}');
+                run('docker cp ~/.ssh/{{idFile}} {{project}}_web:/home/dev/.ssh/{{idFile}}');
+                run('docker exec {{project}}_web chown -R dev:dev /home/dev/.ssh/{{idFile}}');
+                writeln(run('cat ~/.ssh/{{idFile}}.pub'));
+            } else {writeln('No keys were generated or pulled');}
+        }
 
-    // --------- TUG - Step 14. Move Shared Directory into Container --------- //
+
+    });
+
+
+    // --------- TUG - Step 15. Move Shared Directory into Container --------- //
     // Add shared files
     desc('Create and add shared files');
     task('tug:share', function () {
