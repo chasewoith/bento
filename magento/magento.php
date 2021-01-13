@@ -36,9 +36,6 @@ after('deploy:failed', 'magento:maintenance:disable');
 desc('Setup Vanilla Magento2 Environment');
 task('setup:magento', function() {
     run('cd {{release_path}} && chmod -R 777 var/ app/etc/ pub/ generated/');
-    set('real_hostname', function () {
-      return Task\Context::get()->getHost()->getHostname();
-    });
     $host = get('real_hostname');
     run('{{bin/php}} {{release_path}}/bin/magento setup:uninstall');
     run('{{bin/php}} {{release_path}}/bin/magento setup:install --base-url=http://{{real_hostname}} --db-host={{name}}_db --db-name=dev --db-user=root --db-password={{name}}_mysql_root --backend-frontname=admin_{{name}} --admin-firstname=cool --admin-lastname=blue --admin-email=admin@coolblueweb.com --admin-user=admin --admin-password=Ba99llard99! --language=en_US --currency=USD --timezone=America/Los_Angeles --use-rewrites=1');
@@ -50,58 +47,62 @@ task('setup:magento', function() {
 // On Role DEMO -- Import and/or Update DB
 desc('Import and/or Update DB');
 task('deploy:db', function() {
-    // set timeout to 60min
-    $run_options['timeout'] = Deployer::setDefault('default_timeout', 3600);
-    set('real_hostname', function () {
-      return Task\Context::get()->getHost()->getHostname();
-    });
+    if (askConfirmation('Would you like to run DB functions?')) {
+        # skip steps if no
 
-    // Display connections listed in env.php file
-    writeln(run('cd {{release_path}} && grep -r "\'connection\' => \'" ./app/etc/env.php'));
+        // set timeout to 60min
+        $run_options['timeout'] = Deployer::setDefault('default_timeout', 3600);
+        set('real_hostname', function () {
+          return Task\Context::get()->getHost()->getHostname();
+        });
 
-    if (askConfirmation('Would you like to import/update your database from a remote connection?')) {
-        // Ask user for source and target connections
-        set('source_db', ask('What source db connection would you like to pull from?','default'));
-        set('target_db', ask('What target db connection would you like to push to?','default'));
-        writeln('Migrating database... this may take a while.... Please Hold');
+        // Display connections listed in env.php file
+        writeln(run('cd {{release_path}} && grep -r "\'connection\' => \'" ./app/etc/env.php'));
 
-        set('slackln_text', ':pancakes: Migrating db from {{source_db}} to {{target_db}} :pancakes:');
-        set('slackln_color', '#FFC73A');
-        invoke('slackln');
+        if (askConfirmation('Would you like to import/update your database from a remote connection?')) {
+            // Ask user for source and target connections
+            set('source_db', ask('What source db connection would you like to pull from?','default'));
+            set('target_db', ask('What target db connection would you like to push to?','default'));
+            writeln('Migrating database... this may take a while.... Please Hold');
 
-        // Migrate stripped db from source to target
-        run('cd {{release_path}} && mrun db:dump --connection={{source_db}} --strip="@development importexport_importdata" db_migration.sql',$run_options);
-        run('cd {{release_path}} && mrun db:import --connection={{target_db}} db_migration.sql',$run_options);
+            set('slackln_text', ':pancakes: Migrating db from {{source_db}} to {{target_db}} :pancakes:');
+            set('slackln_color', '#FFC73A');
+            invoke('slackln');
 
-        writeln('Successfully imported! Cleaning up 🧹');
-        run('if [ -e $(echo {{release_path}}/db_migration.sql) ]; then rm {{release_path}}/db_migration.sql; fi');
+            // Migrate stripped db from source to target
+            run('cd {{release_path}} && mrun db:dump --connection={{source_db}} --strip="@development importexport_importdata" db_migration.sql',$run_options);
+            run('cd {{release_path}} && mrun db:import --connection={{target_db}} db_migration.sql',$run_options);
 
-        writeln('Creating Default Admin User');
-        run('cd {{release_path}} && mrun admin:user:create --admin-user=admin --admin-password=Ba99llard99! --admin-email=chase@coolblueweb.com  --admin-firstname=Chase --admin-lastname=CBW');
-    }
+            writeln('Successfully imported! Cleaning up 🧹');
+            run('if [ -e $(echo {{release_path}}/db_migration.sql) ]; then rm {{release_path}}/db_migration.sql; fi');
 
-    // Check and set base url configs @TODO: Need to impliment pre check so deploy does not break if config is not set.
-    if (!test('cd {{release_path}} && mrun config:show web/unsecure/base_url --no-ansi')){
-        writeln(run('cd {{release_path}} && mrun config:show web/unsecure/base_url --no-ansi'));
-    }
+            writeln('Creating Default Admin User');
+            run('cd {{release_path}} && mrun admin:user:create --admin-user=admin --admin-password=Ba99llard99! --admin-email=chase@coolblueweb.com  --admin-firstname=Chase --admin-lastname=CBW');
+        }
 
-    if (!test('cd {{release_path}} && mrun config:show web/secure/base_url --no-ansi')){
-        writeln(run('cd {{release_path}} && mrun config:show web/secure/base_url --no-ansi'));
-    }
-    
+        // Check and set base url configs @TODO: Need to impliment pre check so deploy does not break if config is not set.
+        if (!test('cd {{release_path}} && mrun config:show web/unsecure/base_url --no-ansi')){
+            writeln(run('cd {{release_path}} && mrun config:show web/unsecure/base_url --no-ansi'));
+        }
 
-    if (askConfirmation('Would you like to update your base urls?')) {
-        run('cd {{release_path}} && mrun config:store:set web/unsecure/base_url http://{{real_hostname}}/');
-        run('cd {{release_path}} && mrun config:store:set web/secure/base_url https://{{real_hostname}}/');
-        writeln('Urls updated!');
-    }
+        if (!test('cd {{release_path}} && mrun config:show web/secure/base_url --no-ansi')){
+            writeln(run('cd {{release_path}} && mrun config:show web/secure/base_url --no-ansi'));
+        }
+        
 
-    if (askConfirmation('Would you like to update your media urls?')) {
-        $unsecure_media_url = ask('What is the unsecure media url?','http://example.com/media/');
-        run('cd {{release_path}} && mrun config:store:set web/unsecure/base_media_url '.$unsecure_media_url);
-        $secure_media_url = ask('What is the secure media url?','https://example.com/media/');
-        run('cd {{release_path}} && mrun config:store:set web/secure/base_media_url '.$secure_media_url);
-        writeln('Urls updated!');
+        if (askConfirmation('Would you like to update your base urls?')) {
+            run('cd {{release_path}} && mrun config:store:set web/unsecure/base_url http://{{real_hostname}}/');
+            run('cd {{release_path}} && mrun config:store:set web/secure/base_url https://{{real_hostname}}/');
+            writeln('Urls updated!');
+        }
+
+        if (askConfirmation('Would you like to update your media urls?')) {
+            $unsecure_media_url = ask('What is the unsecure media url?','http://example.com/media/');
+            run('cd {{release_path}} && mrun config:store:set web/unsecure/base_media_url '.$unsecure_media_url);
+            $secure_media_url = ask('What is the secure media url?','https://example.com/media/');
+            run('cd {{release_path}} && mrun config:store:set web/secure/base_media_url '.$secure_media_url);
+            writeln('Urls updated!');
+        }
     }
 
     // Show and Set Magento Deploy Mode
@@ -129,7 +130,9 @@ task('deploy:db', function() {
 })->onRoles('demo');
 
 task('testing', function() {
-    test('mrun config:show --help');
+    // test('mrun config:show --help');
+    writeln('release: {{real_hostname}}');
+
 });
 
 // Magento Compile
@@ -205,7 +208,32 @@ task('deploy:magento', [
 
     // After running deploy:magento run magento:writable
     after('deploy:magento', 'magento:writable');
+    after('magento:writable', 'magento:admin:reset' );
 
+    task('magento:admin:reset', function() {
+        /*
+        Need to include these flags
+          --admin-user=ADMIN-USER                    (Required) Admin user
+          --admin-password=ADMIN-PASSWORD            (Required) Admin password
+          --admin-email=ADMIN-EMAIL                  (Required) Admin email
+          --admin-firstname=ADMIN-FIRSTNAME          (Required) Admin first name
+          --admin-lastname=ADMIN-LASTNAME            (Required) Admin last name
+        */
+
+        if (askConfirmation('Would you like to reset your admin password?')) {
+
+            writeln('release: {{release_name}}');
+
+             # set flags
+            $adminFlags = ' --admin-user={{name}}Admin --admin-password={{name}}_magento_admin_v{{release_name}} --admin-email=magento{{name}}@mailinator.com --admin-firstname=FIRSTNAME --admin-lastname=LASTNAME';
+
+             # run admin:user:create
+            run ('cd /var/www/html/current && php bin/magento admin:user:create'.$adminFlags);
+        } 
+
+        writeln('Admin URL: http://{{real_hostname}}/admin_{{name}}');
+
+    });
 
 
     // Symlink html to pub for nexcess production builds
@@ -230,6 +258,9 @@ task('deploy:magento', [
         set('shared_dirs', ['pub/media','var/log','var/backups']); 
         // set('writable_dirs', ['var']);
         // set('clear_paths', ['var/generation/*','var/cache/*','pub/static/*']);
+        set('real_hostname', function () {
+          return Task\Context::get()->getHost()->getHostname();
+        });
         
         cd('/var/www/html');
         
