@@ -86,7 +86,7 @@ namespace Deployer;
         $branch = ask('What branch?',$branch);
         set('branch',$branch);
 
-    })->onRoles('wp-engine');
+    });
 
     // Set open Permissions for xxx directories and set git filemode to false
     task('woo:writable', function(){
