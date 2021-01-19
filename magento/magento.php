@@ -267,23 +267,16 @@ task('deploy:magento', [
         writeln('There aren\'t any install scripts built for automating databases yet. Please manually import your database and update the core_config table with correct url values');
 
         $repo_names = [
-            'ohmbeads',
-            'resoul',
-            'glerup-revere',
-            'glerup-m2',
-            'seattle-coffee-gear-m2',
-            'telescopes',
-            'telescopes-m2',
-            'pinehurst_redesign'
+            'magetwo'
         ];
 
         writeln($repo_names);
 
         // Ask for project 3 letter code
         $repo = get('repository');
-        $repo = strtolower(ask('What Repo? https://github.com/coolblueweb/',$repo,$repo_names));
+        $repo = strtolower(ask('What Repo? https://github.com/chasewoith/',$repo,$repo_names));
         if (substr($repo,0,4) !== 'http') {
-            $repo = 'https://github.com/coolblueweb/'.$repo;
+            $repo = 'https://github.com/chasewoith/'.$repo;
         }
         set('repository',$repo);
 
@@ -293,7 +286,7 @@ task('deploy:magento', [
         set('branch',$branch);
 
 
-    })->onRoles('demo');
+    })->onRoles('demo', 'm24');
 
     // After running deploy:info run magento:info
     after('deploy:info', 'magento:info');
